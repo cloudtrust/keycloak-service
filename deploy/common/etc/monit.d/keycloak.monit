@@ -1,0 +1,4 @@
+check host keycloak with address localhost
+        start program = "/usr/bin/systemctl start keycloak.service"
+        stop program  = "/usr/bin/systemctl stop keycloak.service"
+        if failed host 127.0.0.1 port 8080 protocol HTTP request / with timeout 30 seconds then restart

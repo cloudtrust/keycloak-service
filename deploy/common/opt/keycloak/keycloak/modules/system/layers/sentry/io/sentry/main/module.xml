@@ -1,0 +1,14 @@
+<?xml version="1.0" ?>
+
+<module xmlns="urn:jboss:module:1.1" name="io.sentry">
+
+    <resources>
+        <resource-root path="sentry-1.6.3.jar"/>
+    </resources>
+
+    <dependencies>
+        <module name="com.fasterxml.jackson.core.jackson-core"/>
+		<module name="org.slf4j"/>
+		<module name="javax.api"/>
+    </dependencies>
+</module>

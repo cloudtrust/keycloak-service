@@ -1,36 +1,36 @@
 FROM cloudtrust-baseimage:f27
 
 ARG keycloak_service_git_tag
+ARG event_emitter_git_tag
+ARG config_env
+ARG config_git_tag
+ARG config_repo
 
 #Get dependencies and put keycloak where we expect it to be
-RUN dnf install -y java java-1.8.0-openjdk.x86_64 monit git nginx vim wget && dnf clean all && \
-    groupadd keycloak && \
+RUN dnf install -y java java-1.8.0-openjdk.x86_64 monit git nginx vim wget && \
+    dnf clean all
+
+RUN groupadd keycloak && \
     useradd -m -s /sbin/nologin -g keycloak keycloak && \
     install -d -v -m755 /opt/keycloak -o root -g root && \
-    install -d -v -m755 /opt/keycloak/archive -o root -g root && \
-    cd /opt/keycloak/archive && \
-    wget https://downloads.jboss.org/keycloak/3.4.3.Final/keycloak-3.4.3.Final.tar.gz && \
+    install -d -v -m755 /opt/keycloak/archive -o root -g root 
+
+WORKDIR /opt/keycloak/archive
+RUN wget https://downloads.jboss.org/keycloak/3.4.3.Final/keycloak-3.4.3.Final.tar.gz && \
     tar -xzf keycloak-3.4.3.Final.tar.gz && \
     mv -v keycloak-3.4.3.Final keycloak && \
     mv keycloak /opt/keycloak/ && \
     chmod 775 -R /opt/keycloak/ && \
     chown -R root:keycloak /opt/keycloak/
 
-WORKDIR /opt
-RUN \
-    git clone git@github.com:cloudtrust/keycloak-service.git && \
-    cd keycloak-service && \
-    git checkout ${keycloak_service_git_tag}
-
-WORKDIR /opt
-RUN \
+WORKDIR /cloudtrust
+RUN git clone git@github.com:cloudtrust/keycloak-service.git && \
     git clone git@github.com:cloudtrust/event-emitter.git && \
-    cd event-emitter && \
-    git checkout 546df8070da8b0f1a99341e0e571d43f4a8669cb
+    git clone ${config_repo} ./config 
 
-WORKDIR /opt/keycloak-service
-#Install keycloak
-RUN install -d -v -m755 /opt/keycloak/realmsdump -o keycloak -g keycloak && \
+WORKDIR /cloudtrust/keycloak-service
+RUN git checkout ${keycloak_service_git_tag} && \
+    install -d -v -m755 /opt/keycloak/realmsdump -o keycloak -g keycloak && \
     install -d -v -m755 /opt/keycloak/keycloak/standalone/log -o keycloak -g keycloak && \
     install -d -v -m755 /opt/keycloak/keycloak/standalone/tmp -o keycloak -g keycloak && \
     install -d -v -m755 /opt/keycloak/keycloak/standalone/data -o keycloak -g keycloak && \
@@ -56,28 +56,23 @@ RUN install -d -v -m755 /opt/keycloak/realmsdump -o keycloak -g keycloak && \
     install -v -o root -g root -m 644 deploy/common/etc/systemd/system/keycloak.service /etc/systemd/system/keycloak.service && \
     install -v -m0755 -o keycloak -g keycloak /opt/keycloak/keycloak/docs/contrib/scripts/systemd/launch.sh /opt/keycloak/keycloak/bin/ && \
 #Enable the new layers
-    install -v -m0755 -o keycloak -g keycloak deploy/common/opt/keycloak/keycloak/modules/layers.conf /opt/keycloak/keycloak/modules/layers.conf
-
-RUN install -v -m0775 -o root -g keycloak -d /opt/keycloak/keycloak/modules/system/layers/keycloak/org/postgresql && \
+    install -v -m0755 -o keycloak -g keycloak deploy/common/opt/keycloak/keycloak/modules/layers.conf /opt/keycloak/keycloak/modules/layers.conf && \
+    install -v -m0775 -o root -g keycloak -d /opt/keycloak/keycloak/modules/system/layers/keycloak/org/postgresql && \
     install -v -m0775 -o root -g keycloak -d /opt/keycloak/keycloak/modules/system/layers/keycloak/org/postgresql/main && \
-    install -v -m0775 -o root -g keycloak deploy/common/opt/keycloak/keycloak/modules/system/layers/keycloak/org/postgresql/main/* /opt/keycloak/keycloak/modules/system/layers/keycloak/org/postgresql/main/
-
-#Install wsfed modules
-RUN install -d -v -m755 /opt/keycloak/keycloak/modules/system/layers/wsfed -o keycloak -g keycloak && \
+    install -v -m0775 -o root -g keycloak deploy/common/opt/keycloak/keycloak/modules/system/layers/keycloak/org/postgresql/main/* /opt/keycloak/keycloak/modules/system/layers/keycloak/org/postgresql/main/ && \
+    install -d -v -m755 /opt/keycloak/keycloak/modules/system/layers/wsfed -o keycloak -g keycloak && \
     install -d -v -m755 /opt/keycloak/keycloak/modules/system/layers/wsfed/com/quest/keycloak-wsfed/main/ -o keycloak -g keycloak && \
-    install -v -m0755 -o keycloak -g keycloak -D deploy/common/opt/keycloak/keycloak/modules/system/layers/wsfed/com/quest/keycloak-wsfed/main/* /opt/keycloak/keycloak/modules/system/layers/wsfed/com/quest/keycloak-wsfed/main 
-
-# Install sentry module
-RUN install -d -v -m755 /opt/keycloak/keycloak/modules/system/layers/sentry -o keycloak -g keycloak && \
+    install -v -m0755 -o keycloak -g keycloak -D deploy/common/opt/keycloak/keycloak/modules/system/layers/wsfed/com/quest/keycloak-wsfed/main/* /opt/keycloak/keycloak/modules/system/layers/wsfed/com/quest/keycloak-wsfed/main && \
+    install -d -v -m755 /opt/keycloak/keycloak/modules/system/layers/sentry -o keycloak -g keycloak && \
     install -d -v -m755 /opt/keycloak/keycloak/modules/system/layers/sentry/io/sentry/main/ -o keycloak -g keycloak && \
     install -d -v -m755 /opt/keycloak/keycloak/modules/system/layers/sentry/io/sentry/log4j/main/ -o keycloak -g keycloak && \
     install -v -m0755 -o keycloak -g keycloak -D deploy/common/opt/keycloak/keycloak/modules/system/layers/sentry/io/sentry/main/* /opt/keycloak/keycloak/modules/system/layers/sentry/io/sentry/main/ && \
     install -v -m0755 -o keycloak -g keycloak -D deploy/common/opt/keycloak/keycloak/modules/system/layers/sentry/io/sentry/log4j/main/* /opt/keycloak/keycloak/modules/system/layers/sentry/io/sentry/log4j/main/
 
 
-WORKDIR /opt/event-emitter
-#Keycloak event emitter install
-RUN install -d -v -m755 -o keycloak -g keycloak /opt/keycloak/keycloak/modules/system/layers/eventemitter && \
+WORKDIR /cloudtrust/event-emitter
+RUN git checkout  ${event_emitter_git_tag} && \
+    install -d -v -m755 -o keycloak -g keycloak /opt/keycloak/keycloak/modules/system/layers/eventemitter && \
     install -d -v -m755 -o keycloak -g keycloak /opt/keycloak/keycloak/modules/system/layers/eventemitter/io/ && \
     install -d -v -m755 -o keycloak -g keycloak /opt/keycloak/keycloak/modules/system/layers/eventemitter/io/cloudtrust/ && \
     install -d -v -m755 -o keycloak -g keycloak /opt/keycloak/keycloak/modules/system/layers/eventemitter/io/cloudtrust/keycloak/ && \
@@ -97,8 +92,19 @@ RUN install -d -v -m755 -o keycloak -g keycloak /opt/keycloak/keycloak/modules/s
     install -d -v -m755 -o keycloak -g keycloak /opt/keycloak/keycloak/modules/system/layers/eventemitter/com/google/guava/main && \
     install -v -m0755 -o keycloak -g keycloak deploy/com/google/guava/main/* /opt/keycloak/keycloak/modules/system/layers/eventemitter/com/google/guava/main/
 
+WORKDIR /cloudtrust/config
+RUN git checkout ${config_git_tag} && \
+    install -v -m0755 -o keycloak -g keycloak deploy/${config_env}/opt/keycloak/keycloak/standalone/configuration/keycloak-add-user.json /opt/keycloak/keycloak/standalone/configuration/keycloak-add-user.json && \
+    install -v -m0644 -o keycloak -g keycloak deploy/${config_env}/opt/keycloak/keycloak/standalone/configuration/standalone.xml /opt/keycloak/keycloak/standalone/configuration/standalone.xml && \
+    install -v -d -o root -g root /opt/keycloak-bridge && \
+    install -v -d -o root -g root /opt/keycloak-bridge/conf && \
+    install -v -o root -g root deploy/${config_env}/opt/keycloak-bridge/conf/keycloak_bridge.yaml /opt/keycloak-bridge/conf/ && \
+    install -v -o root -g root deploy/${config_env}/opt/keycloak-bridge/keycloakd /opt/keycloak-bridge && \
+    install -v -o root -g root deploy/${config_env}/etc/systemd/system/keycloak_bridge.service /etc/systemd/system/ && \
+    install -v -d -o root -g root /etc/systemd/system/keycloak_bridge.d 
+
 #Enable services
 RUN systemctl enable nginx.service && \
     systemctl enable keycloak.service && \
-    systemctl enable monit.service
-
+    systemctl enable monit.service && \
+    systemctl enable keycloak_bridge

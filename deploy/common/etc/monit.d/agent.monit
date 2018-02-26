@@ -1,0 +1,4 @@
+check process agent matching "agent"
+  start program = "/usr/bin/systemctl start agent.service"
+  stop program = "/usr/bin/systemctl stop agent.service"
+  if not exist then restart

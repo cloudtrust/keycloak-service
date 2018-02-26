@@ -13,7 +13,9 @@ RUN dnf install -y java java-1.8.0-openjdk.x86_64 monit git nginx vim wget && \
 RUN groupadd keycloak && \
     useradd -m -s /sbin/nologin -g keycloak keycloak && \
     install -d -v -m755 /opt/keycloak -o root -g root && \
-    install -d -v -m755 /opt/keycloak/archive -o root -g root 
+    install -d -v -m755 /opt/keycloak/archive -o root -g root && \
+    groupadd agent && \
+    useradd -m -s /sbin/nologin -g agent agent
 
 WORKDIR /opt/keycloak/archive
 RUN wget https://downloads.jboss.org/keycloak/3.4.3.Final/keycloak-3.4.3.Final.tar.gz && \
@@ -24,6 +26,8 @@ RUN wget https://downloads.jboss.org/keycloak/3.4.3.Final/keycloak-3.4.3.Final.t
     chown -R root:keycloak /opt/keycloak/
 
 WORKDIR /cloudtrust
+ADD ./agent-linux /cloudtrust/agent
+
 RUN git clone git@github.com:cloudtrust/keycloak-service.git && \
     git clone git@github.com:cloudtrust/event-emitter.git && \
     git clone ${config_repo} ./config 
@@ -67,7 +71,15 @@ RUN git checkout ${keycloak_service_git_tag} && \
     install -d -v -m755 /opt/keycloak/keycloak/modules/system/layers/sentry/io/sentry/main/ -o keycloak -g keycloak && \
     install -d -v -m755 /opt/keycloak/keycloak/modules/system/layers/sentry/io/sentry/log4j/main/ -o keycloak -g keycloak && \
     install -v -m0755 -o keycloak -g keycloak -D deploy/common/opt/keycloak/keycloak/modules/system/layers/sentry/io/sentry/main/* /opt/keycloak/keycloak/modules/system/layers/sentry/io/sentry/main/ && \
-    install -v -m0755 -o keycloak -g keycloak -D deploy/common/opt/keycloak/keycloak/modules/system/layers/sentry/io/sentry/log4j/main/* /opt/keycloak/keycloak/modules/system/layers/sentry/io/sentry/log4j/main/
+    install -v -m0755 -o keycloak -g keycloak -D deploy/common/opt/keycloak/keycloak/modules/system/layers/sentry/io/sentry/log4j/main/* /opt/keycloak/keycloak/modules/system/layers/sentry/io/sentry/log4j/main/ && \
+# jaeger agent
+    install -d -v -m755 /etc/agent/ -o agent -g agent && \
+    install -v -m0755 deploy/common/etc/agent/* /etc/agent/ && \
+    install -v -m0755 /cloudtrust/agent /etc/agent/ && \
+    chown agent:agent /etc/agent/agent && \
+    install -v -o agent -g agent -m 644 deploy/common/etc/systemd/system/agent.service /etc/systemd/system/agent.service && \
+    install -v -o root -g root -m 644 -d /etc/systemd/system/agent.service.d && \
+    install -v -o root -g root -m 644 deploy/common/etc/systemd/system/agent.service.d/limit.conf /etc/systemd/system/agent.service.d/limit.conf
 
 
 WORKDIR /cloudtrust/event-emitter
@@ -107,4 +119,5 @@ RUN git checkout ${config_git_tag} && \
 RUN systemctl enable nginx.service && \
     systemctl enable keycloak.service && \
     systemctl enable monit.service && \
+    systemctl enable agent.service && \
     systemctl enable keycloak_bridge

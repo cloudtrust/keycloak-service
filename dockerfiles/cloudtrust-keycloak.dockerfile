@@ -2,6 +2,7 @@ FROM cloudtrust-baseimage:f27
 
 ARG keycloak_service_git_tag
 ARG event_emitter_git_tag
+ARG jaeger_release 
 ARG config_env
 ARG config_git_tag
 ARG config_repo
@@ -15,7 +16,8 @@ RUN groupadd keycloak && \
     install -d -v -m755 /opt/keycloak -o root -g root && \
     install -d -v -m755 /opt/keycloak/archive -o root -g root && \
     groupadd agent && \
-    useradd -m -s /sbin/nologin -g agent agent
+    useradd -m -s /sbin/nologin -g agent agent && \
+    install -d -v -m755 /etc/agent/ -o agent -g agent
 
 WORKDIR /opt/keycloak/archive
 RUN wget https://downloads.jboss.org/keycloak/3.4.3.Final/keycloak-3.4.3.Final.tar.gz && \
@@ -25,8 +27,14 @@ RUN wget https://downloads.jboss.org/keycloak/3.4.3.Final/keycloak-3.4.3.Final.t
     chmod 775 -R /opt/keycloak/ && \
     chown -R root:keycloak /opt/keycloak/
 
+# Get jaeger agent
 WORKDIR /cloudtrust
-ADD ./agent-linux /cloudtrust/agent
+RUN wget ${jaeger_release} && \
+    tar -xzf v1.2.0.tar.gz && \
+    mv -v v1.2.0 jaeger && \
+    install -v -m0755 jaeger/agent-linux /etc/agent/agent && \
+    rm v1.2.0.tar.gz && \
+    rm -rf jaeger/
 
 RUN git clone git@github.com:cloudtrust/keycloak-service.git && \
     git clone git@github.com:cloudtrust/event-emitter.git && \
@@ -72,15 +80,10 @@ RUN git checkout ${keycloak_service_git_tag} && \
     install -d -v -m755 /opt/keycloak/keycloak/modules/system/layers/sentry/io/sentry/log4j/main/ -o keycloak -g keycloak && \
     install -v -m0755 -o keycloak -g keycloak -D deploy/common/opt/keycloak/keycloak/modules/system/layers/sentry/io/sentry/main/* /opt/keycloak/keycloak/modules/system/layers/sentry/io/sentry/main/ && \
     install -v -m0755 -o keycloak -g keycloak -D deploy/common/opt/keycloak/keycloak/modules/system/layers/sentry/io/sentry/log4j/main/* /opt/keycloak/keycloak/modules/system/layers/sentry/io/sentry/log4j/main/ && \
-# jaeger agent
-    install -d -v -m755 /etc/agent/ -o agent -g agent && \
-    install -v -m0755 deploy/common/etc/agent/* /etc/agent/ && \
-    install -v -m0755 /cloudtrust/agent /etc/agent/ && \
-    chown agent:agent /etc/agent/agent && \
+# jaeger-agent
     install -v -o agent -g agent -m 644 deploy/common/etc/systemd/system/agent.service /etc/systemd/system/agent.service && \
     install -v -o root -g root -m 644 -d /etc/systemd/system/agent.service.d && \
     install -v -o root -g root -m 644 deploy/common/etc/systemd/system/agent.service.d/limit.conf /etc/systemd/system/agent.service.d/limit.conf
-
 
 WORKDIR /cloudtrust/event-emitter
 RUN git checkout  ${event_emitter_git_tag} && \
@@ -113,7 +116,8 @@ RUN git checkout ${config_git_tag} && \
     install -v -o root -g root deploy/${config_env}/opt/keycloak-bridge/conf/keycloak_bridge.yaml /opt/keycloak-bridge/conf/ && \
     install -v -o root -g root deploy/${config_env}/opt/keycloak-bridge/keycloakd /opt/keycloak-bridge && \
     install -v -o root -g root deploy/${config_env}/etc/systemd/system/keycloak_bridge.service /etc/systemd/system/ && \
-    install -v -d -o root -g root /etc/systemd/system/keycloak_bridge.d 
+    install -v -d -o root -g root /etc/systemd/system/keycloak_bridge.d && \
+    install -v -m0755 -o agent -g agent deploy/${config_env}/etc/jaeger-agent/agent.yml /etc/agent/
 
 #Enable services
 RUN systemctl enable nginx.service && \

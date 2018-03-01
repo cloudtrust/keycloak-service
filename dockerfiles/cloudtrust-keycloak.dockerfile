@@ -27,31 +27,6 @@ RUN wget https://downloads.jboss.org/keycloak/3.4.3.Final/keycloak-3.4.3.Final.t
     chmod 775 -R /opt/keycloak/ && \
     chown -R root:keycloak /opt/keycloak/
 
-# Get jaeger agent
-WORKDIR /cloudtrust
-RUN wget ${jaeger_release} -O jaeger.tar.gz && \
-    mkdir jaeger && \
-    tar -xzf jaeger.tar.gz -C jaeger --strip-components 1 && \
-    install -v -m0755 jaeger/agent-linux /etc/agent/agent && \
-    rm jaeger.tar.gz && \
-    rm -rf jaeger/
-
-WORKDIR /cloudtrust
-RUN wget ${event_emitter_release} -O event_emitter.tar.gz && \
-    mkdir event_emitter && \
-    tar -xzf event_emitter.tar.gz -C event_emitter --strip-components 1 && \
-    rm -f event_emitter.tar.gz
-
-WORKDIR /cloudtrust
-RUN wget ${keycloak_bridge_release} -O keycloak-bridge.tar.gz && \
-    mkdir "keycloak-bridge" && \
-    tar -xzf "keycloak-bridge.tar.gz" -C "keycloak-bridge" --strip-components 1 && \
-    rm -f keycloak-bridge.tar.gz
-
-WORKDIR /cloudtrust/keycloak-bridge
-RUN install -d -v -o root -g root /opt/keycloak-bridge && \ 
-    install -v -o root -g root keycloakd /opt/keycloak-bridge
-
 WORKDIR /cloudtrust
 RUN git clone git@github.com:cloudtrust/keycloak-service.git && \
     git clone ${config_repo} ./config 
@@ -106,16 +81,36 @@ RUN install -d -v -m755 /opt/keycloak/keycloak/modules/system/layers/sentry -o k
     install -v -m0755 -o keycloak -g keycloak -D deploy/opt/keycloak/keycloak/modules/system/layers/sentry/io/sentry/main/* /opt/keycloak/keycloak/modules/system/layers/sentry/io/sentry/main/ && \
     install -v -m0755 -o keycloak -g keycloak -D deploy/opt/keycloak/keycloak/modules/system/layers/sentry/io/sentry/log4j/main/* /opt/keycloak/keycloak/modules/system/layers/sentry/io/sentry/log4j/main/
 
+##
+##  JAEGER AGENT
+##
+
+WORKDIR /cloudtrust
+RUN wget ${jaeger_release} -O jaeger.tar.gz && \
+    mkdir jaeger && \
+    tar -xzf jaeger.tar.gz -C jaeger --strip-components 1 && \
+    install -v -m0755 jaeger/agent-linux /etc/agent/agent && \
+    rm jaeger.tar.gz && \
+    rm -rf jaeger/
+
 WORKDIR /cloudtrust/keycloak-service
-# Jaeger agent
 RUN install -v -o agent -g agent -m 644 deploy/etc/systemd/system/agent.service /etc/systemd/system/agent.service && \
     install -d -v -o root -g root -m 644 /etc/systemd/system/agent.service.d && \
     install -v -o root -g root -m 644 deploy/etc/systemd/system/agent.service.d/limit.conf /etc/systemd/system/agent.service.d/limit.conf
 
+##
+##  EVENT EMITTER
+##
+
+WORKDIR /cloudtrust
+RUN wget ${event_emitter_release} -O event-emitter.tar.gz && \
+    mkdir event-emitter && \
+    tar -xzf event-emitter.tar.gz -C event-emitter --strip-components 1 && \
+    rm -f event-emitter.tar.gz
+
 WORKDIR /cloudtrust/event-emitter
 # Event emitter and its dependencies
-RUN git checkout  ${event_emitter_git_tag} && \
-    install -d -v -m755 -o keycloak -g keycloak /opt/keycloak/keycloak/modules/system/layers/eventemitter && \
+RUN install -d -v -m755 -o keycloak -g keycloak /opt/keycloak/keycloak/modules/system/layers/eventemitter && \
     install -d -v -m755 -o keycloak -g keycloak /opt/keycloak/keycloak/modules/system/layers/eventemitter/io/ && \
     install -d -v -m755 -o keycloak -g keycloak /opt/keycloak/keycloak/modules/system/layers/eventemitter/io/cloudtrust/ && \
     install -d -v -m755 -o keycloak -g keycloak /opt/keycloak/keycloak/modules/system/layers/eventemitter/io/cloudtrust/keycloak/ && \
@@ -134,9 +129,29 @@ RUN git checkout  ${event_emitter_git_tag} && \
     install -d -v -m755 -o keycloak -g keycloak /opt/keycloak/keycloak/modules/system/layers/eventemitter/com/google/guava/main && \
     install -v -m0755 -o keycloak -g keycloak deploy/com/google/guava/main/* /opt/keycloak/keycloak/modules/system/layers/eventemitter/com/google/guava/main/
 
+##
+##  KEYCLOAK_BRIDGE
+##
+
+WORKDIR /cloudtrust
+RUN wget ${keycloak_bridge_release} -O keycloak-bridge.tar.gz && \
+    mkdir "keycloak-bridge" && \
+    tar -xzf "keycloak-bridge.tar.gz" -C "keycloak-bridge" --strip-components 1 && \
+    rm -f keycloak-bridge.tar.gz
+
+WORKDIR /cloudtrust/keycloak-bridge
+RUN install -d -v -o root -g root /opt/keycloak-bridge && \ 
+    install -v -o root -g root keycloakd /opt/keycloak-bridge
+
+##
+##  CONFIG
+##
+
 WORKDIR /cloudtrust/config
-RUN git checkout ${config_git_tag} && \
-    install -v -m0755 -o keycloak -g keycloak deploy/opt/keycloak/keycloak/standalone/configuration/keycloak-add-user.json /opt/keycloak/keycloak/standalone/configuration/keycloak-add-user.json && \
+RUN git checkout ${config_git_tag}
+
+WORKDIR /cloudtrust/config
+RUN install -v -m0755 -o keycloak -g keycloak deploy/opt/keycloak/keycloak/standalone/configuration/keycloak-add-user.json /opt/keycloak/keycloak/standalone/configuration/keycloak-add-user.json && \
     install -v -m0644 -o keycloak -g keycloak deploy/opt/keycloak/keycloak/standalone/configuration/standalone.xml /opt/keycloak/keycloak/standalone/configuration/standalone.xml && \
     install -d -v -o root -g root /opt/keycloak-bridge/conf && \
     install -v -o root -g root deploy/opt/keycloak-bridge/conf/keycloak_bridge.yaml /opt/keycloak-bridge/conf/ && \

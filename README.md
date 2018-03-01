@@ -1,33 +1,16 @@
 #Installing keycloak
 ```Bash
-#Get the repo
-git clone git@github.com:cloudtrust/keycloak-service.git
-cd keycloak-service
-
 #Build the dockerfile
-cd docker-context
-docker build -t cloudtrust-keycloak -f cloudtrust-keycloak.dockerfile .
+docker build --build-arg config_repo=git@github.com:cloudtrust/dev-config --build-arg config_git_tag=master --build-arg keycloak_service_git_tag=initial --build-arg event_emitter_git_tag=master --build-arg branch=master -t cloudtrust-keycloak -f cloudtrust-keycloak.dockerfile .
 
-#install systemd unit file
-install -v -o root -g root -m 644  ../deploy/common/etc/systemd/system/cloudtrust-keycloak@.service /etc/systemd/system/cloudtrust-keycloak@.service
-
-#create container 1
-docker create --tmpfs /tmp --tmpfs /run -v /sys/fs/cgroup:/sys/fs/cgroup:ro --name keycloak-1 -p 8080:80 cloudtrust-keycloak
-
-#start container 1
-systemctl start cloudtrust-keycloak@1
+#Run the container
+docker run -d --tmpfs /tmp --tmpfs /run -v /sys/fs/cgroup:/sys/fs/cgroup:ro --name keycloak-1 -p 8080:80 cloudtrust-keycloak
 ```
 
 #Import export of realm data
 
 ##Export of realms data
 Currently realm data are exported on /opt/keycloak/realmsdump
-
-##Creat admin user
-```Bash
-cd /op/keycloak/keycloak
-bin/add-user-keycloak.[sh|bat] -r master -u <username> -p <password>
-```
 
 ##Import of realms data
 

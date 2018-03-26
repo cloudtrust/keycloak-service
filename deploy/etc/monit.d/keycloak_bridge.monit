@@ -1,0 +1,4 @@
+check process keycloak_bridge matching "keycloak_bridge"
+  start program = "/usr/bin/systemctl start keycloak_bridge.service"
+  stop program = "/usr/bin/systemctl stop keycloak_bridge.service"
+  if failed host 127.0.0.1 port 8888 protocol HTTP request / with timeout 10 seconds then restart

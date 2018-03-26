@@ -22,7 +22,8 @@ RUN groupadd keycloak && \
     install -d -v -m755 /opt/keycloak/archive -o root -g root && \
     groupadd agent && \
     useradd -m -s /sbin/nologin -g agent agent && \
-    install -d -v -m755 /etc/agent/ -o agent -g agent
+    install -d -v -m755 /opt/agent -o root -g root && \
+    install -d -v -m755 /etc/agent -o agent -g agent
 
 WORKDIR /opt/keycloak/archive
 RUN wget https://downloads.jboss.org/keycloak/3.4.3.Final/keycloak-3.4.3.Final.tar.gz && \
@@ -168,8 +169,8 @@ RUN wget ${keycloak_bridge_release} -O keycloak-bridge.tar.gz && \
     rm -f keycloak-bridge.tar.gz
 
 WORKDIR /cloudtrust/keycloak-bridge
-RUN install -d -v -o root -g root /opt/keycloak-bridge && \ 
-    install -v -o root -g root keycloak_bridge /opt/keycloak-bridge
+RUN install -d -v -o keycloak -g keycloak /opt/keycloak-bridge && \ 
+    install -v -o keycloak -g keycloak keycloak_bridge /opt/keycloak-bridge
 
 ##
 ##  CONFIG
@@ -181,10 +182,11 @@ RUN git checkout ${config_git_tag}
 WORKDIR /cloudtrust/config
 RUN install -v -m0755 -o keycloak -g keycloak deploy/opt/keycloak/keycloak/standalone/configuration/keycloak-add-user.json /opt/keycloak/keycloak/standalone/configuration/keycloak-add-user.json && \
     install -v -m0644 -o keycloak -g keycloak deploy/opt/keycloak/keycloak/standalone/configuration/standalone.xml /opt/keycloak/keycloak/standalone/configuration/standalone.xml && \
-    install -d -v -o root -g root /opt/keycloak-bridge/conf && \
-    install -v -o root -g root deploy/opt/keycloak-bridge/conf/keycloak_bridge.yml /opt/keycloak-bridge/conf/ && \
+    install -d -v -o keycloak -g keycloak /opt/keycloak-bridge/conf && \
+    install -v -o keycloak -g keycloak deploy/opt/keycloak-bridge/conf/keycloak_bridge.yml /opt/keycloak-bridge/conf/ && \
     install -v -o root -g root deploy/etc/systemd/system/keycloak_bridge.service /etc/systemd/system/ && \
-    install -d -v -o root -g root /etc/systemd/system/keycloak_bridge.d
+    install -d -v -o root -g root /etc/systemd/system/keycloak_bridge.d && \
+    install -v -m0755 -o agent -g agent deploy/etc/jaeger-agent/agent.yml /etc/agent/
 
 ##
 ##  Enable services

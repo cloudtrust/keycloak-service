@@ -6,7 +6,7 @@ After=network.target
 Type=simple
 User=agent
 Group=agent
-ExecStart=/etc/agent/agent --config-file /etc/agent/agent.yml
+ExecStart=/opt/agent/agent --config-file /etc/agent/agent.yml
 
 [Install]
 WantedBy=multi-user.target

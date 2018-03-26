@@ -13,8 +13,7 @@ ARG config_repo
 ###  Prepare the system stuff
 ###
 
-
-RUN dnf install -y java java-1.8.0-openjdk.x86_64 nginx vim wget && \
+RUN dnf install -y java java-1.8.0-openjdk.x86_64 nginx && \
     dnf clean all
 
 RUN groupadd keycloak && \
@@ -130,7 +129,7 @@ WORKDIR /cloudtrust
 RUN wget ${jaeger_release} -O jaeger.tar.gz && \
     mkdir jaeger && \
     tar -xzf jaeger.tar.gz -C jaeger --strip-components 1 && \
-    install -v -m0755 jaeger/agent-linux /etc/agent/agent && \
+    install -v -m0755 jaeger/agent-linux /opt/agent/agent && \
     rm jaeger.tar.gz && \
     rm -rf jaeger/
 
@@ -170,7 +169,7 @@ RUN wget ${keycloak_bridge_release} -O keycloak-bridge.tar.gz && \
 
 WORKDIR /cloudtrust/keycloak-bridge
 RUN install -d -v -o root -g root /opt/keycloak-bridge && \ 
-    install -v -o root -g root keycloakd /opt/keycloak-bridge
+    install -v -o root -g root keycloak_bridge /opt/keycloak-bridge
 
 ##
 ##  CONFIG
@@ -183,13 +182,16 @@ WORKDIR /cloudtrust/config
 RUN install -v -m0755 -o keycloak -g keycloak deploy/opt/keycloak/keycloak/standalone/configuration/keycloak-add-user.json /opt/keycloak/keycloak/standalone/configuration/keycloak-add-user.json && \
     install -v -m0644 -o keycloak -g keycloak deploy/opt/keycloak/keycloak/standalone/configuration/standalone.xml /opt/keycloak/keycloak/standalone/configuration/standalone.xml && \
     install -d -v -o root -g root /opt/keycloak-bridge/conf && \
-    install -v -o root -g root deploy/opt/keycloak-bridge/conf/keycloak_bridge.yaml /opt/keycloak-bridge/conf/ && \
+    install -v -o root -g root deploy/opt/keycloak-bridge/conf/keycloak_bridge.yml /opt/keycloak-bridge/conf/ && \
     install -v -o root -g root deploy/etc/systemd/system/keycloak_bridge.service /etc/systemd/system/ && \
     install -d -v -o root -g root /etc/systemd/system/keycloak_bridge.d
 
-#Enable services
+##
+##  Enable services
+##
+
 RUN systemctl enable nginx.service && \
     systemctl enable keycloak.service && \
     systemctl enable monit.service && \
     systemctl enable agent.service && \
-    systemctl enable keycloak_bridge
+    systemctl enable keycloak_bridge.service

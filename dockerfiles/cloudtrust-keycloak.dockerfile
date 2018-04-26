@@ -13,7 +13,8 @@ ARG config_repo
 ###  Prepare the system stuff
 ###
 
-RUN dnf install -y java java-1.8.0-openjdk.x86_64 nginx && \
+RUN dnf update -y && \
+    dnf install -y java java-1.8.0-openjdk.x86_64 nginx && \
     dnf clean all
 
 RUN groupadd keycloak && \

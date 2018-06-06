@@ -6,6 +6,7 @@ ARG jaeger_release
 ARG keycloak_bridge_release
 ARG wsfed_release
 ARG keycloak_export_release
+ARG keycloak_authorization_release
 ARG config_git_tag
 ARG config_repo
 
@@ -97,6 +98,20 @@ WORKDIR /cloudtrust/keycloak_export
 RUN install -d -v -m755 /opt/keycloak/keycloak/modules/system/layers/export/ -o keycloak -g keycloak && \
     install -d -v -m755 /opt/keycloak/keycloak/modules/system/layers/export/io/cloudtrust/keycloak-export/main/ -o keycloak -g keycloak && \
     install -v -m0755 -o keycloak -g keycloak io/cloudtrust/keycloak-export/main/* /opt/keycloak/keycloak/modules/system/layers/export/io/cloudtrust/keycloak-export/main/
+
+##
+##  Authorization
+##
+
+WORKDIR /cloudtrust
+RUN wget ${keycloak_authorization_release} -O authorization.tar.gz && \
+    mkdir authorization && \
+    tar -xzf authorization.tar.gz -C authorization --strip-components 1
+
+WORKDIR /cloudtrust/authorization
+RUN install -d -v -m755 /opt/keycloak/keycloak/modules/system/layers/authorization -o keycloak -g keycloak && \
+    install -d -v -m755 /opt/keycloak/keycloak/modules/system/layers/authorization/io/cloudtrust/keycloak-authorization/main/ -o keycloak -g keycloak && \
+    install -v -m0755 -o keycloak -g keycloak io/cloudtrust/keycloak-authorization/main/* /opt/keycloak/keycloak/modules/system/layers/authorization/io/cloudtrust/keycloak-authorization/main
 
 ##
 ##  WS-Fed support

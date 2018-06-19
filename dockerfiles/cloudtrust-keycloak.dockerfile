@@ -3,7 +3,7 @@ FROM cloudtrust-baseimage:f27
 ARG keycloak_service_git_tag
 ARG event_emitter_release
 ARG jaeger_release 
-ARG keycloak_realease
+ARG keycloak_release
 ARG keycloak_bridge_release
 ARG wsfed_release
 ARG keycloak_export_release
@@ -30,7 +30,8 @@ RUN groupadd keycloak && \
 
 WORKDIR /opt/keycloak/archive
 RUN wget ${keycloak_release} -O keycloak_release.tar.gz && \
-    tar -xzf keycloak_release.tar.gz && \
+    mkdir keycloak_release && \
+    tar -xzf keycloak_release.tar.gz -C keycloak_release --strip-components 1 && \
     mv -v keycloak_release keycloak && \
     mv keycloak /opt/keycloak/ && \
     chmod 775 -R /opt/keycloak/ && \

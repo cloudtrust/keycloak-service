@@ -3,6 +3,7 @@ FROM cloudtrust-baseimage:f27
 ARG keycloak_service_git_tag
 ARG event_emitter_release
 ARG jaeger_release 
+ARG keycloak_realease
 ARG keycloak_bridge_release
 ARG wsfed_release
 ARG keycloak_export_release
@@ -28,9 +29,9 @@ RUN groupadd keycloak && \
     install -d -v -m755 /etc/agent -o agent -g agent
 
 WORKDIR /opt/keycloak/archive
-RUN wget https://downloads.jboss.org/keycloak/3.4.3.Final/keycloak-3.4.3.Final.tar.gz && \
-    tar -xzf keycloak-3.4.3.Final.tar.gz && \
-    mv -v keycloak-3.4.3.Final keycloak && \
+RUN wget ${keycloak_release} -O keycloak_release.tar.gz && \
+    tar -xzf keycloak_release.tar.gz && \
+    mv -v keycloak_release keycloak && \
     mv keycloak /opt/keycloak/ && \
     chmod 775 -R /opt/keycloak/ && \
     chown -R root:keycloak /opt/keycloak/

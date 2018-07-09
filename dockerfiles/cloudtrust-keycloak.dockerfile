@@ -6,7 +6,7 @@ ARG jaeger_release
 ARG keycloak_release
 ARG keycloak_bridge_release
 ARG wsfed_release
-#ARG keycloak_client_mappers_release
+ARG keycloak_client_mappers_release
 ARG keycloak_export_release
 ARG keycloak_authorization_release
 ARG config_git_tag
@@ -92,15 +92,15 @@ RUN install -d -v -m755 /opt/keycloak/keycloak/modules/system/layers/keycloak/or
 ##  Keycloak Client Mappers
 ##
 
-#WORKDIR /cloudtrust
-#RUN wget ${keycloak_client_mappers_release} -O keycloak_client-mappers.tar.gz && \
-#    mkdir keycloak_client-mappers && \
-#    tar -xzf keycloak_client-mappers.tar.gz -C keycloak_client-mappers --strip-components 1
+WORKDIR /cloudtrust
+RUN wget ${keycloak_client_mappers_release} -O keycloak_client-mappers.tar.gz && \
+    mkdir keycloak_client-mappers && \
+    tar -xzf keycloak_client-mappers.tar.gz -C keycloak_client-mappers --strip-components 1
 
-#WORKDIR /cloudtrust/keycloak_client-mappers
-#RUN install -d -v -m755 /opt/keycloak/keycloak/modules/system/layers/client-mappers/ -o keycloak -g keycloak && \
-#    install -d -v -m755 /opt/keycloak/keycloak/modules/system/layers/client-mappers/io/cloudtrust/keycloak-client-mappers/main/ -o keycloak -g keycloak && \
-#    install -v -m0755 -o keycloak -g keycloak io/cloudtrust/keycloak-client-mappers/main/* /opt/keycloak/keycloak/modules/system/layers/client-mappers/io/cloudtrust/keycloak-client-mappers/main/
+WORKDIR /cloudtrust/keycloak_client-mappers
+RUN install -d -v -m755 /opt/keycloak/keycloak/modules/system/layers/client-mappers/ -o keycloak -g keycloak && \
+    install -d -v -m755 /opt/keycloak/keycloak/modules/system/layers/client-mappers/io/cloudtrust/keycloak-client-mappers/main/ -o keycloak -g keycloak && \
+    install -v -m0755 -o keycloak -g keycloak io/cloudtrust/keycloak-client-mappers/main/* /opt/keycloak/keycloak/modules/system/layers/client-mappers/io/cloudtrust/keycloak-client-mappers/main/
 
 ##
 ##  Keycloak Export

@@ -1,14 +1,14 @@
 FROM cloudtrust-baseimage:f27
 
 ARG keycloak_service_git_tag
-ARG event_emitter_release
-ARG jaeger_release 
-ARG keycloak_release
-ARG keycloak_bridge_release
-ARG wsfed_release
-ARG keycloak_client_mappers_release
-ARG keycloak_export_release
-ARG keycloak_authorization_release
+ARG event_emitter_release=0.1
+ARG jaeger_release=1.2.0
+ARG keycloak_release=3.4.3.Final
+ARG keycloak_bridge_release=1.0
+ARG wsfed_release=3.4.3
+ARG keycloak_client_mappers_release=1.0
+ARG keycloak_export_release=0.3
+ARG keycloak_authorization_release=0.3
 ARG config_git_tag
 ARG config_repo
 

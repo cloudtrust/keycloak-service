@@ -12,12 +12,15 @@ ARG keycloak_authorization_release
 ARG config_git_tag
 ARG config_repo
 
+ARG java8_version=1:1.8.0.181-7.b13.fc27
+ARG nginx_version=1.12.1-1.fc27
+
 ###
 ###  Prepare the system stuff
 ###
 
 RUN dnf update -y && \
-    dnf install -y java java-1.8.0-openjdk.x86_64 nginx && \
+    dnf install -y java-1.8.0-openjdk-$java8_version nginx-$nginx_version && \
     dnf clean all
 
 RUN groupadd keycloak && \
